@@ -1,0 +1,168 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>Chatooooo</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" href="./static/style.css">
+
+</head>
+
+<body class="bg-dark">
+  <div class="loginModal w-100 bg-image2">
+    <div class="container d-flex justify-content-center align-items-center h-100 flex-column">
+      <h1>Chatooooo!</h1>
+      <div>
+        <label class="text-center text-light bg-custom1 p-5 rounded">
+          <h5>Login</h5>
+          <input class="form-control" id="u" type="text" placeholder="Username" required />
+          <label for="c">Choose a Color: </label>
+          <!-- <select id="c">
+          </select> -->
+          <input id='c' type="color" required list="presetColors">
+          <datalist id="presetColors">
+            <option value="#FF0000">Red</option>
+            <option value="#FFA500">Orange</option>
+            <option value="#FFFF00">Yellow</option>
+            <option value="#008000">Green</option>
+            <option value="#0000FF">Blue</option>
+            <option value="#4B0082">Indigo</option>
+            <option value="#EE82EE">Violet</option>
+          </datalist>
+          <button class="w-100 btn btn-warning mt-3" id="login">
+            <h5>Chatooooo!</h5>
+          </button>
+        </label>
+      </div>
+
+    </div>
+  </div>
+  <div class="bg-image1">
+    <h1 class="text-center text-warning">Chatooooo!</h1>
+    <h3 id="yourName" class="text-center text-white"></h3>
+    <div id="chatBody" class="h-100">
+      <p id="messages" class="container"></p>
+      <audio controls style="opacity: 0; position: absolute;">
+        <source id="source" src="./static/hahaha.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+      </audio>
+      <form action="" class="footer">
+        <div class="  d-flex justify-content-cente">
+          <div id="logout" class="col-sm-1 btn btn-danger text-dark w-100">Logout</div>
+          <input class="col-sm-10 form-control" id="m" autocomplete="off" />
+          <button class="col-sm-1 btn btn-info text-dark w-100">Send</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+  <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+  <script>
+    let socket = io();
+    let users
+    let user;
+    $('#login').attr("disabled", true)
+    socket.on('availableColors', (availableColors) => {
+      JSON.parse(availableColors).forEach(color => {
+        $('#c').append(`<option value="${color.value}">${color.name}</option>`)
+      });
+    })
+    socket.on('onlineUsers', (onlineUsers) => {
+
+      users = JSON.parse(onlineUsers)
+      user = users.find(user => user.id == localStorage.getItem("id"))
+      if (user) {
+        $('.loginModal').css('display', 'none')
+        $('#chatBody').css('display', 'block')
+
+      }
+
+    })
+
+    $('#login').click(() => {
+      users.push({
+        name: $('#u').val(),
+        id: users.length + 1,
+        color: $('#c').val(),
+      })
+      socket.emit('saveUser', users)
+      localStorage.setItem("username", $('#u').val())
+      localStorage.setItem("id", users.length)
+      $('.loginModal').css('display', 'none')
+      $('#chatBody').css('display', 'block')
+    })
+    $('#logout').click(() => {
+      users = users.filter(user => user.id != localStorage.getItem("id"))
+      socket.emit('removeUser', users)
+      localStorage.clear()
+      window.location.reload()
+    })
+    $('#u').change((e) => {
+      if (e.target.value)
+        $('#login').attr("disabled", false)
+    })
+
+    $(function () {
+      let user
+      $('form').submit(function (e) {
+        e.preventDefault(); // prevents page reloading
+
+        socket.emit('user message', users.find(user => user.id == localStorage.getItem("id")));
+        socket.emit('chat message', $('#m').val());
+        $('#m').val('');
+        return false;
+      });
+      socket.on('user message', (user1) => {
+        user = user1
+      })
+      socket.on('chat message', function (msg) {
+        let p;
+        let messagePopStyle = `box-shadow: 2px 3px 20px 3px ${user.color}`
+        if (user.name != localStorage.getItem('username')) {
+          p = $(`<p class="offset-sm-6  col-sm-6" >`)
+            .append(` 
+                    <div class="p-3 fadeIn bg-white rounded  " style="border: 1px solid ${user.color};${messagePopStyle}">
+                    <span class="badge badge-light" style="color:${user.color}">${user.name}:</span>   
+                    <p class="text-wrap ">${msg}</p>    
+                    </div>
+                    `)
+        } else {
+          p = $(`<p class="col-sm-6" >`)
+            .append(` 
+                    <div class="p-3 fadeIn bg-white rounded " style="border: 1px solid ${user.color};${messagePopStyle}">
+                      <span class="badge badge-light" style="color:${user.color}">${user.name}:</span>
+                    <p class="text-wrap ">${msg}</p>    
+                    </div>
+                    `)
+        }
+        $('#messages').append(p);
+        if (msg == "11") {
+          $('audio').get(0).load();
+          $('audio').get(0).play();
+        }
+        let pPos = p.position()
+        console.log(pPos);
+
+        $('html').scrollTop(pPos.top)
+      });
+      window.addEventListener('beforeunload', function (e) {
+        e.preventDefault();
+        e.returnValue = '';
+      });
+    });
+  </script>
+  <script src="./static/s1.js"></script>
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous">
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+    integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous">
+  </script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+    integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous">
+  </script>
+</body>
+
+</html>

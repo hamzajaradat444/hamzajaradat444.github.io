@@ -1,0 +1,46 @@
+.loginModal{
+    position: absolute;
+    z-index: 5;
+    background-color: #346688;
+    width:100%;
+    height: 100vh
+}
+.bg-custom1{
+    background-color: rgba(46, 46, 46, 0.726);
+   
+}
+.bg-image1{
+    width: 100%;
+    height: 100%;
+    min-height: 100vh;
+    background-image: url(bg.jpg);
+}
+.bg-image2{
+    width: 100%;
+    height: 100%;
+    min-height: 100vh;
+    background-image: url(bg2.png);
+}
+.footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: rgb(39, 245, 217);
+    color: white;
+    text-align: center;
+ }
+
+.fadeIn {
+    animation-name: fadeIn;
+    animation-duration: 1s;
+  }
+  
+  @keyframes fadeIn {
+    from {
+        opacity:0;
+    }
+    to {
+        opacity:1;
+    }
+  }
