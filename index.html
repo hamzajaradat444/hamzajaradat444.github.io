@@ -61,22 +61,20 @@
   <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
   <script>
     let socket = io();
-    let users
+    let users = []
     let user;
     $('#login').attr("disabled", true)
     socket.on('availableColors', (availableColors) => {
-      JSON.parse(availableColors).forEach(color => {
+      availableColors.forEach(color => {
         $('#c').append(`<option value="${color.value}">${color.name}</option>`)
       });
     })
     socket.on('onlineUsers', (onlineUsers) => {
-
-      users = JSON.parse(onlineUsers)
+      users = onlineUsers
       user = users.find(user => user.id == localStorage.getItem("id"))
       if (user) {
         $('.loginModal').css('display', 'none')
         $('#chatBody').css('display', 'block')
-
       }
 
     })
@@ -147,10 +145,7 @@
 
         $('html').scrollTop(pPos.top)
       });
-      window.addEventListener('beforeunload', function (e) {
-        e.preventDefault();
-        e.returnValue = '';
-      });
+    
     });
   </script>
   <script src="./static/s1.js"></script>

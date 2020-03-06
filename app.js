@@ -8,8 +8,11 @@ app.use("/static", express.static('./static/'));
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
 });
-let onlineUsers = fs.readFileSync('./static/onlineUsers.json').toString()
-let availableColors = fs.readFileSync('./static/availableColors.json').toString()
+let onlineUsers1 = fs.readFileSync('./static/onlineUsers.json').toString()
+let availableColors2 = fs.readFileSync('./static/availableColors.json').toString()
+
+let onlineUsers = []
+let availableColors =[]
 
 io.on('connection', function(socket){
     io.emit('onlineUsers',onlineUsers)
@@ -24,11 +27,15 @@ io.on('connection', function(socket){
       });
 
       socket.on('saveUser',(users)=>{
-        fs.writeFileSync('./static/onlineUsers.json',JSON.stringify(users))
+        /* fs.writeFileSync('./static/onlineUsers.json',JSON.stringify(users)) */
+        console.log(users,"on save");
+        onlineUsers=users
+        
       })
       socket.on('removeUser',(users)=>{
-        
-        fs.writeFileSync('./static/onlineUsers.json',JSON.stringify(users))
+        console.log(users,"on remove");
+        onlineUsers=users
+        /* fs.writeFileSync('./static/onlineUsers.json',JSON.stringify(users)) */
       })
 
 
