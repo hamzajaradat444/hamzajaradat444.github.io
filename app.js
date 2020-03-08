@@ -40,8 +40,8 @@ io.on('connection', function(socket){
 
 
 });
-
-http.listen(process.env.PORT||3000, function(){
+let port  = process.env.PORT||3000
+http.listen(port, function(){
   console.log('listening on *:3000');
 });
 
