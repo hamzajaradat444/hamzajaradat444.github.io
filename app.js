@@ -4,12 +4,12 @@ var http = require('http').createServer(app);
 var io = require('socket.io')(http);
 var fs = require('fs');
 
-app.use("/static", express.static('./static/'));
+app.use("/assets", express.static('./assets/'));
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
 });
-let onlineUsers1 = fs.readFileSync('./static/onlineUsers.json').toString()
-let availableColors2 = fs.readFileSync('./static/availableColors.json').toString()
+/* let onlineUsers1 = fs.readFileSync('./static/onlineUsers.json').toString()
+let availableColors2 = fs.readFileSync('./static/availableColors.json').toString() */
 
 let onlineUsers = []
 let availableColors =[]
