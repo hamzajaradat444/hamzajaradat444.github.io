@@ -1,95 +1,129 @@
-let users = []
-let user;
+let socket = io()
+function presentLoader() {
+  $('#loader').css('display', 'block')
+}
+function dismissLoader() {
+  $('#loader').css('display', 'none')
+}
 $('#login').attr("disabled", true)
-socket.on('availableColors', (availableColors) => {
-  availableColors.forEach(color => {
-    $('#c').append(`<option value="${color.value}">${color.name}</option>`)
-  });
-})
-socket.on('onlineUsers', (onlineUsers) => {
-  users = onlineUsers
-  user = users.find(user => user.id == localStorage.getItem("id"))
-  if (user) {
-    $('.loginModal').css('display', 'none')
-    $('#chatBody').css('display', 'block')
-  }
-
-})
 
 $('#login').click(() => {
-  users.push({
+  socket.emit('saveUser', {
     name: $('#u').val(),
-    id: users.length + 1,
+    id: 1,
     color: $('#c').val(),
     privateChatId: $('#private').val(),
 
   })
-  socket.emit('saveUser', users)
-  localStorage.setItem("username", $('#u').val())
-  localStorage.setItem("id", users.length)
-  localStorage.setItem("privateChatId",$('#private').val())
-  $('.loginModal').css('display', 'none')
-  $('#chatBody').css('display', 'block')
+  localStorage.setItem("name", $('#u').val())
+  localStorage.setItem("id", 1)
+  localStorage.setItem("color", $('#c').val())
+  localStorage.setItem("privateChatId", $('#private').val())
+  presentLoader()
 })
 $('#logout').click(() => {
-  users = users.filter(user => user.id != localStorage.getItem("id"))
-  socket.emit('removeUser', users)
-  localStorage.clear()
-  window.location.reload()
+  presentLoader()
+  socket.emit('removeUser', { name: localStorage.getItem('name') })
 })
 $('#private').change((e) => {
   if (e.target.value)
     $('#login').attr("disabled", false)
 })
+$('form').submit(function (e) {
+  e.preventDefault(); // prevents page reloading
+
+  socket.emit('chat message', {
+    user: {
+      name: localStorage.getItem("name"),
+      id: localStorage.getItem("id"),
+      color: localStorage.getItem("color"),
+      privateChatId: localStorage.getItem("privateChatId"),
+    },
+    msg: $('#m').val(),
+    privateChatId: localStorage.getItem("privateChatId")
+  });
+  $('#m').val('');
+  return false;
+});
 
 $(function () {
-  let user
-  $('form').submit(function (e) {
-    e.preventDefault(); // prevents page reloading
-
-    socket.emit('user message', users.find(user => user.id == localStorage.getItem("id")));
-    socket.emit('chat message', {
-                                msg:$('#m').val(),
-                                p:users.find(user => user.id == localStorage.getItem("id")).privateChatId
-                              });
-    $('#m').val('');
-    return false;
-  });
-  socket.on('user message', (user1) => {
-    user = user1
+  if (localStorage.getItem('id')) {
+    socket.emit('getLoggedInUser', {
+      id: localStorage.getItem('id'),
+      name: localStorage.getItem('name'),
+      privateChatId: localStorage.getItem('privateChatId'),
+    })
+    presentLoader();
+  }
+  socket.on('availableColors', (availableColors) => {
+    availableColors.forEach(color => {
+      $('#c').append(`<option value="${color.value}">${color.name}</option>`)
+    });
   })
-  socket.on('chat message', function (msg) {
-    let p;
-    let messagePopStyle = `box-shadow: 2px 3px 20px 3px ${user.color}`
-    console.log(msg,user);
-    
-    if(msg.p == localStorage.getItem("privateChatId"))
-    if (user.name != localStorage.getItem('username')) {
-      p = $(`<p class="offset-sm-6  col-sm-6" >`)
-        .append(` 
-                <div class="p-3 fadeIn bg-white rounded  " style="border: 1px solid ${user.color};${messagePopStyle}">
-                <span class="badge badge-light" style="color:${user.color}">${user.name}:</span>   
-                <p class="text-wrap ">${msg.msg}</p>    
-                </div>
-                `)
-    } else {
-      p = $(`<p class="col-sm-6" >`)
-        .append(` 
-                <div class="p-3 fadeIn bg-white rounded " style="border: 1px solid ${user.color};${messagePopStyle}">
-                  <span class="badge badge-light" style="color:${user.color}">${user.name}:</span>
-                <p class="text-wrap ">${msg.msg}</p>    
-                </div>
-                `)
+
+  socket.on('allowLogin', (user) => {
+
+    if (user.name == localStorage.getItem('name')) {
+      dismissLoader()
+      $('.loginModal').css('display', 'none')
+      $('#chatBody').css('display', 'block')
     }
-    $('#messages').append(p);
-    if (msg.msg == "11") {
+  })
+
+  socket.on('allowLoginAfterSave', (user) => {
+
+    if (user.name == localStorage.getItem('name')) {
+      dismissLoader()
+      $('.loginModal').css('display', 'none')
+      $('#chatBody').css('display', 'block')
+    }
+  })
+
+  socket.on('afterLogout', (user) => {
+    console.log(user, localStorage.getItem('name'));
+
+    if (user.name == localStorage.getItem('name')) {
+      localStorage.clear()
+      window.location.reload()
+    }
+
+  })
+
+  socket.on('chat message', function (data) {
+    let meassage;
+    let messageBoxStyle = `box-shadow: 2px 3px 20px 3px ${data.user.color}`
+    console.log(data);
+
+    if (data.privateChatId == localStorage.getItem("privateChatId"))
+      if (data.user.name != localStorage.getItem('name')) {
+        meassage = $(`<p class="offset-sm-6  col-sm-6" >`)
+          .append(` 
+                <div class="p-3 fadeIn bg-white rounded  " style="border: 1px solid ${data.user.color};${messageBoxStyle}">
+                <span class="badge badge-light" style="color:${data.user.color}">${data.user.name}:</span>   
+                <p class="text-wrap ">${data.msg}</p>    
+                </div>
+                `)
+      } else {
+        meassage = $(`<p class="col-sm-6" >`)
+          .append(` 
+                <div class="p-3 fadeIn bg-white rounded " style="border: 1px solid ${data.user.color};${messageBoxStyle}">
+                  <span class="badge badge-light" style="color:${data.user.color}">You:</span>
+                <p class="text-wrap ">${data.msg}</p>    
+                </div>
+                `)
+      }
+    $('#messages').append(meassage);
+    if (data.msg == "11") {
       $('audio').get(0).load();
       $('audio').get(0).play();
     }
-    let pPos = p.position()
-    console.log(pPos);
+    let meassagePos = meassage.position()
+    console.log(meassagePos);
 
-    $('html').scrollTop(pPos.top)
+    $('html').scrollTop(meassagePos.top)
   });
+  socket.on('error', () => {
+    dismissLoader()
+  })
 
 });
