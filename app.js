@@ -11,16 +11,11 @@ app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
 });
 
-let availableColors =[]
-/* async function listDatabases(client) {
-  databasesList = await client.db().admin().listDatabases();
+/* let availableColors =[] */
 
-  console.log("Databases:");
-  databasesList.databases.forEach(db => console.log(` - ${db.name}`));
-}; */
 io.on('connection', function(socket){
 
-  io.emit('availableColors',availableColors);
+  /* io.emit('availableColors',availableColors); */
 
   socket.on('getLoggedInUser',async (loggedInUser)=>{
     await client.connect()
@@ -31,21 +26,47 @@ io.on('connection', function(socket){
   });
   socket.on('saveUser',async (user)=>{
     await client.connect()
-    let res = await client.db('Users').collection('loggedInUsers').insertOne(user)
-    console.log('saveUser',res.ops);
-    if(res)io.emit("allowLoginAfterSave",res.ops[0])
+    let res = await client.db('Users').collection('existingPrivateRooms').findOne({privateRoomId:user.privateChatId})
+    if(res){
+      io.emit("joinReqesut",user)
+    }
+    else{
+      console.log("Room Available");
+      let res1 = await client.db('Users').collection('loggedInUsers').insertOne(user)
+      let res2 = await client.db('Users').collection('existingPrivateRooms').insertOne({
+        owner:user.name,
+        privateRoomId:user.privateChatId
+      })
+      if(res1&&res2)io.emit("allowLoginAfterSave",res1.ops[0])
+    }
+    
   })
+  
   socket.on('removeUser',async (user)=>{
     await client.connect()
-    let res = await client.db('Users').collection('loggedInUsers').deleteOne({name:user.name})
-    console.log('afterLogout',res.deletedCount,user);
-    if(res.deletedCount)io.emit("afterLogout",user)
+    let res1 = await client.db('Users').collection('loggedInUsers').deleteOne({name:user.name})
+    let res2 = await client.db('Users').collection('existingPrivateRooms').deleteOne({owner:user.name})
+    console.log('afterLogout',res1.deletedCount,user);
+    if(res1.deletedCount&&res2.deletedCount)io.emit("afterLogout",user)
   })
 
+  socket.on('sendingJoinRequset',async (user)=>{
+    console.log("sendingJoinRequset",user);
+    let res = await client.db('Users').collection('existingPrivateRooms').findOne({privateRoomId:user.privateChatId})
+    io.emit('joinRequsetSent',{owner:res,user})
+  })
 
-    socket.on('chat message', function(msg){
-        io.emit('chat message', msg);
-      });
+  socket.on('sendingAcceptRequset',(user)=>{
+    io.emit('joiningAccepted', user);
+  })
+
+  socket.on('sendingDeclineRequset',(user)=>{
+    io.emit('joiningDeclined', user);
+  })
+  socket.on('onChatMessage', function(msg){
+      io.emit('onChatMessage', msg);
+          });
+  socket.on('saveUserAfterJoinRequestAccept', (user)=>SaveAfterJoinRequestAccept(user))
      
 
 });
@@ -54,3 +75,7 @@ http.listen(port, function(){
   console.log('listening on *:' + port);
 });
 
+
+async function SaveAfterJoinRequestAccept(user){
+  await client.db('Users').collection('loggedInUsers').insertOne(user)
+}

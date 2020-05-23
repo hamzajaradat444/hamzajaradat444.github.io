@@ -10,13 +10,14 @@
 </head>
 
 <body>
-  <div id='loader'>
+  
+  
+  <div class="loginModal w-100">
+    <div id='loader'>
     <div class="loader">
       <span class="spinner"></span>
     </div>
   </div>
-  
-  <div class="loginModal w-100">
   <div class="bg-image2"></div>
     <div class="container d-flex justify-content-center align-items-center h-100 flex-column">
       <a class="navbar-brand" href="#">
@@ -28,8 +29,6 @@
           <input class="form-control" id="u" type="text" placeholder="Username" required />
           <input class="form-control" id="private" type="text" placeholder="Private Chat Id" required />
           <label for="c">Choose a Color: </label>
-          <!-- <select id="c">
-          </select> -->
           <input id='c' type="color" required list="presetColors">
           <datalist id="presetColors">
             <option value="#FF0000">Red</option>
@@ -51,6 +50,7 @@
   <div class="chatModal w-100" >
   <div class="bg-image1"></div>
     <div id="chatBody" class="h-100">
+      <div id="accpetJoinBox" class="requestJoin"></div>
       <nav class="navbar navbar-default sticky-top mb-5">
         <div class="container-fluid">
           <div class="navbar-header">
