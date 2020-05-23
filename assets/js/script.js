@@ -121,7 +121,9 @@ function OnJoinRequest(user) {
 
   $('#requestJoin').click(() => {
     socket.emit('sendingJoinRequset', user)
+    $('#requestJoin').attr("disabled", true)
   });
+  
 }
 
 function OnJoinRequestSent({
