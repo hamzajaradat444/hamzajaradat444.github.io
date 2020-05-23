@@ -123,7 +123,7 @@ function OnJoinRequest(user) {
     socket.emit('sendingJoinRequset', user)
     $('#requestJoin').attr("disabled", true)
   });
-  
+
 }
 
 function OnJoinRequestSent({
@@ -132,11 +132,13 @@ function OnJoinRequestSent({
 }) {
   if (owner.owner == localStorage.getItem('name'))
     $('#accpetJoinBox').css('display', 'block')
-  $(`#accpetJoinBox`).append(` 
+  $('#removeBox').remove()
+  $(`#accpetJoinBox`).append(`
+  <div id="removeBox"> 
       <h1>Reqeust Join From ${user.name}</h1>
       <button id="acceptJoin">Accept</button>
       <button id="declineJoin">Decline</button>
-            `)
+      </div>`)
 
 
   $('#acceptJoin').click(() => {

@@ -47,7 +47,7 @@ io.on('connection', function(socket){
     let res1 = await client.db('Users').collection('loggedInUsers').deleteOne({name:user.name})
     let res2 = await client.db('Users').collection('existingPrivateRooms').deleteOne({owner:user.name})
     console.log('afterLogout',res1.deletedCount,user);
-    if(res1.deletedCount&&res2.deletedCount)io.emit("afterLogout",user)
+    if(res1.deletedCount)io.emit("afterLogout",user)
   })
 
   socket.on('sendingJoinRequset',async (user)=>{
