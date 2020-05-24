@@ -1,9 +1,5 @@
 let socket = io()
 
-$('.loginModal').css('display', 'block')
-$('.chatModal').css('display', 'none')
-$('#accpetJoinBox').css('display', 'none')
-
 function presentLoader() {
   $('#loader').css('display', 'block')
 }
@@ -11,8 +7,21 @@ function presentLoader() {
 function dismissLoader() {
   $('#loader').css('display', 'none')
 }
-$('#login').attr("disabled", true)
 
+$(()=>{
+  if (localStorage.getItem('id')) {
+    socket.emit('getLoggedInUser', {
+      id: localStorage.getItem('id'),
+      name: localStorage.getItem('name'),
+      privateChatId: localStorage.getItem('privateChatId'),
+    })
+    presentLoader();
+  }
+
+$('.loginModal').css('display', 'block')
+$('.chatModal').css('display', 'none')
+$('#accpetJoinBox').css('display', 'none')
+$('#login').attr("disabled", true)
 $('#login').click(() => {
   socket.emit('saveUser', {
     name: $('#u').val(),
@@ -39,7 +48,6 @@ $('#private').change((e) => {
 })
 $('form').submit(function (e) {
   e.preventDefault(); // prevents page reloading
-
   socket.emit('onChatMessage', {
     user: {
       name: localStorage.getItem("name"),
@@ -54,50 +62,17 @@ $('form').submit(function (e) {
   return false;
 });
 
-$(function () {
-  if (localStorage.getItem('id')) {
-    socket.emit('getLoggedInUser', {
-      id: localStorage.getItem('id'),
-      name: localStorage.getItem('name'),
-      privateChatId: localStorage.getItem('privateChatId'),
-    })
-    presentLoader();
-  }
-  /* socket.on('availableColors', (availableColors) => {
-    availableColors.forEach(color => {
-      $('#c').append(`<option value="${color.value}">${color.name}</option>`)
-    });
-  }) */
+
+  
   socket.on('afterLogout', (data) => OnAfterLogout(data))
   socket.on('joinReqesut', (data) => OnJoinRequest(data));
   socket.on('joinRequsetSent', (data) => OnJoinRequestSent(data));
   socket.on('joiningAccepted', (data) => OnJoinRequestAccepted(data));
   socket.on("joiningDeclined", (data) => OnJoinRequestDeclined(data));
   socket.on('onChatMessage', (data) => OnChatMessageRecevied(data));
-
-
-  socket.on('allowLogin', (user) => {
-
-    AllowActionBasedOnUser(user).then((user) => {
-
-      dismissLoader()
-      $('.loginModal').css('display', 'none')
-      $('.chatModal').css('display', 'block')
-    })
-  })
-
-  socket.on('allowLoginAfterSave', (user) => {
-    AllowActionBasedOnUser(user).then((user) => {
-      dismissLoader()
-      $('.loginModal').css('display', 'none')
-      $('.chatModal').css('display', 'block')
-    })
-  })
-
-
-  socket.on('error', () => {
-    dismissLoader()
-  })
+  socket.on('onCaneclJoinRequest', (data) => onCaneclJoinRequest(data));
+  socket.on('allowLogin', (user) => OnAllowLogin(user))
+  socket.on('error', (error) => OnAllErrors(error))
 
 });
 
@@ -112,17 +87,17 @@ function OnAfterLogout(user) {
 function OnJoinRequest(user) {
   $(`#loader`)
     .append(` 
-        <div class="requestJoin">
-        <h1>Room In Use. Reqeust Join</h1>
-        <button id="requestJoin">Request Join</button>
+        <div id="requestJoin" class="requestJoin">
+        <h1>Room In Use</h1>
+        <h2>Waiting For Owner To Allow You To Join</h2>
+        <button id="cancel">Cancel Request</button>
         </div>
               `)
 
-
-  $('#requestJoin').click(() => {
-    socket.emit('sendingJoinRequset', user)
-    $('#requestJoin').attr("disabled", true)
-  });
+  $('#cancel').click(() => {
+    socket.emit('cancelJoinRequset', user)
+  })
+  socket.emit('sendingJoinRequset', user)
 
 }
 
@@ -130,16 +105,17 @@ function OnJoinRequestSent({
   owner,
   user
 }) {
-  if (owner.owner == localStorage.getItem('name'))
+  if (owner.owner == localStorage.getItem('name')){
     $('#accpetJoinBox').css('display', 'block')
-  $('#removeBox').remove()
-  $(`#accpetJoinBox`).append(`
-  <div id="removeBox"> 
-      <h1>Reqeust Join From ${user.name}</h1>
-      <button id="acceptJoin">Accept</button>
-      <button id="declineJoin">Decline</button>
-      </div>`)
-
+    $('#removeBox').remove()
+    $(`#accpetJoinBox`).append(`
+    <div id="removeBox" class="acceptJoinBox"> 
+        <h1>Reqeust Join From ${user.name}</h1>
+        <button id="acceptJoin">Accept</button>
+        <button id="declineJoin">Decline</button>
+        </div>`)
+  }
+    
 
   $('#acceptJoin').click(() => {
     socket.emit('sendingAcceptRequset', user)
@@ -149,13 +125,17 @@ function OnJoinRequestSent({
   });
 }
 
-function AllowActionBasedOnUser(user) {
+function onCaneclJoinRequest(user) {
+  $('#requestJoin').remove()
+  $('#loader').css('display', 'none')
+  $('#accpetJoinBox').css('display', 'none')
+}
 
+function AllowActionBasedOnUser(user) {
   return new Promise((resolve, reject) => {
     if (user.name == localStorage.getItem('name')) {
       console.log(user);
       resolve(user)
-
     }
   })
 }
@@ -175,6 +155,16 @@ function OnJoinRequestAccepted(user) {
   socket.emit('saveUserAfterJoinRequestAccept', user)
 }
 
+function OnAllowLogin(user){
+  AllowActionBasedOnUser(user).then((user) => {
+    dismissLoader()
+    $('.loginModal').css('display', 'none')
+    $('.chatModal').css('display', 'block')
+  })
+}
+function OnAllErrors(error){
+  dismissLoader()
+}
 function OnChatMessageRecevied(data) {
   let meassage;
   let messageBoxStyle = `box-shadow: 2px 3px 20px 3px ${data.user.color}`

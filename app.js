@@ -6,26 +6,39 @@ const MongoClient = require('mongodb').MongoClient;
 const uri = "mongodb+srv://hamzajaradat:11q22w33e@firstapi-xscxv.mongodb.net/test?retryWrites=true&w=majority";
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 const ObjectId = require('mongodb').ObjectID;
+
 app.use("/assets", express.static('./assets/'));
-app.get('/', function(req, res){
+
+app.get('/',(req, res)=>{
   res.sendFile(__dirname + '/index.html');
 });
 
-/* let availableColors =[] */
+io.on('connection',(socket)=>{
+  socket.on('getLoggedInUser',(loggedInUser)=>OnGetLoggedInUser(loggedInUser));
+  socket.on('saveUser',(user)=>OnSaveUser(user));
+  socket.on('removeUser',(user)=>OnRemoveUser(user));
+  socket.on('sendingJoinRequset',(user)=>OnSendingJoinRequset(user));
+  socket.on('cancelJoinRequset', (user)=>OnCaneclJoinRequest(user));
+  socket.on('sendingAcceptRequset',(user)=>OnSendingAcceptRequset(user));
+  socket.on('sendingDeclineRequset',(user)=>OnSendingDeclineRequset(user));
+  socket.on('saveUserAfterJoinRequestAccept', (user)=>OnSaveAfterJoinRequestAccept(user));
+  socket.on('onChatMessage',(msg)=>OnChatMessage(msg));
 
-io.on('connection', function(socket){
+});
 
-  /* io.emit('availableColors',availableColors); */
+let port  = process.env.PORT||3000
+http.listen(port,()=>{
+  console.log('listening on *:' + port);
+});
 
-  socket.on('getLoggedInUser',async (loggedInUser)=>{
-    await client.connect()
-    let res =await client.db('Users').collection('loggedInUsers').findOne({name:loggedInUser.name})
-    if(res)io.emit("allowLogin",res)
-    else io.emit('error')
-    console.log('getLoggedInUser',res,loggedInUser);
-  });
-  socket.on('saveUser',async (user)=>{
-    await client.connect()
+async function OnGetLoggedInUser(loggedInUser){
+  await client.connect()
+  let res =await client.db('Users').collection('loggedInUsers').findOne({name:loggedInUser.name})
+  res?io.emit("allowLogin",res):io.emit('error')
+  console.log('getLoggedInUser',res,loggedInUser);
+}
+async function OnSaveUser(user){
+  await client.connect()
     let res = await client.db('Users').collection('existingPrivateRooms').findOne({privateRoomId:user.privateChatId})
     if(res){
       io.emit("joinReqesut",user)
@@ -37,45 +50,33 @@ io.on('connection', function(socket){
         owner:user.name,
         privateRoomId:user.privateChatId
       })
-      if(res1&&res2)io.emit("allowLoginAfterSave",res1.ops[0])
+      if(res1&&res2)io.emit("allowLogin",res1.ops[0])
     }
-    
-  })
-  
-  socket.on('removeUser',async (user)=>{
-    await client.connect()
+}
+async function OnRemoveUser(user){
+  await client.connect()
     let res1 = await client.db('Users').collection('loggedInUsers').deleteOne({name:user.name})
     let res2 = await client.db('Users').collection('existingPrivateRooms').deleteOne({owner:user.name})
     console.log('afterLogout',res1.deletedCount,user);
     if(res1.deletedCount)io.emit("afterLogout",user)
-  })
-
-  socket.on('sendingJoinRequset',async (user)=>{
+}
+async function OnSaveAfterJoinRequestAccept(user){
+  await client.db('Users').collection('loggedInUsers').insertOne(user)
+}
+async function OnSendingJoinRequset(user){
     console.log("sendingJoinRequset",user);
     let res = await client.db('Users').collection('existingPrivateRooms').findOne({privateRoomId:user.privateChatId})
     io.emit('joinRequsetSent',{owner:res,user})
-  })
-
-  socket.on('sendingAcceptRequset',(user)=>{
-    io.emit('joiningAccepted', user);
-  })
-
-  socket.on('sendingDeclineRequset',(user)=>{
-    io.emit('joiningDeclined', user);
-  })
-  socket.on('onChatMessage', function(msg){
-      io.emit('onChatMessage', msg);
-          });
-  socket.on('saveUserAfterJoinRequestAccept', (user)=>SaveAfterJoinRequestAccept(user))
-     
-
-});
-let port  = process.env.PORT||3000
-http.listen(port, function(){
-  console.log('listening on *:' + port);
-});
-
-
-async function SaveAfterJoinRequestAccept(user){
-  await client.db('Users').collection('loggedInUsers').insertOne(user)
+}
+function OnChatMessage(msg){
+  io.emit('onChatMessage', msg);
+}
+function OnSendingDeclineRequset(user){
+  io.emit('joiningDeclined', user);
+}
+function OnSendingAcceptRequset(user){
+  io.emit('joiningAccepted', user);
+}
+function OnCaneclJoinRequest(user){
+  io.emit('onCaneclJoinRequest',user);
 }
