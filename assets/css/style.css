@@ -95,8 +95,15 @@ html {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  z-index: 999;
 }
-
+.btn1{
+  border-radius: 10px;
+  box-shadow: none;
+  background-color: grey;
+  color: white;
+  margin: 10px;
+}
 .loader {
   display: flex;
   justify-content: center;

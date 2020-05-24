@@ -90,7 +90,7 @@ function OnJoinRequest(user) {
         <div id="requestJoin" class="requestJoin">
         <h1>Room In Use</h1>
         <h2>Waiting For Owner To Allow You To Join</h2>
-        <button id="cancel">Cancel Request</button>
+        <button class="btn1" id="cancel">Cancel Request</button>
         </div>
               `)
 
@@ -111,8 +111,8 @@ function OnJoinRequestSent({
     $(`#accpetJoinBox`).append(`
     <div id="removeBox" class="acceptJoinBox"> 
         <h1>Reqeust Join From ${user.name}</h1>
-        <button id="acceptJoin">Accept</button>
-        <button id="declineJoin">Decline</button>
+        <button class="btn1" id="acceptJoin">Accept</button>
+        <button class="btn1" id="declineJoin">Decline</button>
         </div>`)
   }
     
